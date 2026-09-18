@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16
+    container_name: weather_db
+    environment:
+      POSTGRES_DB: weather_station
+      POSTGRES_USER: weather_user
+      POSTGRES_PASSWORD: weather_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: weather_backend
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: weather_station
+      DB_USERNAME: weather_user
+      DB_PASSWORD: weather_pass
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/var/www/html
+
+  frontend:
+    build: ./frontend
+    container_name: weather_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
