@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Device {
   id: number;
@@ -15,6 +16,7 @@ interface Device {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +92,12 @@ export default function Home() {
               >
                 {/* Status badge */}
                 <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-lg font-semibold">{device.name}</h2>
+                  <h2
+                    className="text-lg font-semibold cursor-pointer hover:text-blue-400 transition"
+                    onClick={() => router.push(`/device/${device.id}`)}
+                  >
+                    {device.name}
+                  </h2>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                       device.is_online

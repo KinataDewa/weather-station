@@ -14,7 +14,7 @@ class ReadingController extends Controller
 {
     public function latest($id)
     {
-        $device = Device::findOrFail($id);
+        $device = Device::with('location')->findOrFail($id);
 
         $readings = SensorReading::where('device_id', $device->id)
             ->with('sensor.sensorType')
@@ -25,18 +25,32 @@ class ReadingController extends Controller
                     ->groupBy('sensor_id');
             })
             ->get()
-            ->map(fn($r) => [
-                'sensor_type' => $r->sensor->sensorType->code,
-                'unit'        => $r->sensor->sensorType->unit,
-                'value'       => $r->calibrated_value,
-                'quality'     => $r->quality_flag,
-                'device_time' => $r->device_time->setTimezone('Asia/Jakarta'),
-            ]);
+            ->keyBy(fn($r) => $r->sensor->sensorType->code);
+
+        $sensorCodes = ['temp_air', 'humidity', 'pressure', 'wind_speed', 'wind_dir', 'solar_rad', 'rain_counter'];
+
+        $values = [];
+        foreach ($sensorCodes as $code) {
+            $values[$code] = isset($readings[$code]) ? (float) $readings[$code]->calibrated_value : null;
+        }
+
+        $recordedAt = $readings->max(fn($r) => $r->device_time);
+
+        $isOnline = $device->last_seen_at
+            && Carbon::now()->diffInMinutes($device->last_seen_at) <= 15;
 
         return response()->json([
             'success'    => true,
             'request_id' => (string) Str::uuid(),
-            'data'       => $readings,
+            'data'       => array_merge($values, [
+                'recorded_at' => $recordedAt ? $recordedAt->setTimezone('Asia/Jakarta')->toIso8601String() : null,
+                'device'      => [
+                    'id'        => $device->id,
+                    'name'      => $device->name,
+                    'location'  => $device->location->name ?? null,
+                    'is_online' => $isOnline,
+                ],
+            ]),
         ]);
     }
 

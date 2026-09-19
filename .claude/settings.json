@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx eslint *)",
+      "Bash(php -v)",
+      "Bash(composer -V)",
+      "Bash(curl -s -i http://localhost:8000/api/v1/dashboard/overview -H \"Origin: http://localhost:3000\")",
+      "Bash(docker exec *)",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan config:show cors)",
+      "Bash(curl -s -i http://localhost:8000/api/v1/devices/1/readings/latest -H \"Origin: http://localhost:3000\")",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php -l /var/www/html/app/Http/Controllers/Api/ReadingController.php)",
+      "Bash(curl -s http://localhost:8000/api/v1/devices/1/readings/latest -H \"Origin: http://localhost:3000\")",
+      "Bash(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ)",
+      "Bash(curl -s 'http://localhost:8000/api/v1/readings?device_id=1&sensor_type=temp_air&from=__CMDSUB_OUTPUT__&to=__TRACKED_VAR__&interval=1h&agg=avg')",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan tinker --execute=\"echo App\\\\Models\\\\ReadingAggregate::where\\('interval','1h'\\)->max\\('bucket_time'\\); echo PHP_EOL; echo App\\\\Models\\\\ReadingAggregate::where\\('interval','1h'\\)->min\\('bucket_time'\\);\")",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan tinker --execute=\"dd\\(App\\\\Models\\\\ReadingAggregate::where\\('interval','1h'\\)->max\\('bucket_time'\\)\\);\")",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan tinker --execute=\"dd\\(App\\\\Models\\\\ReadingAggregate::count\\(\\), App\\\\Models\\\\ReadingAggregate::distinct\\('interval'\\)->pluck\\('interval'\\)\\);\")",
+      "Bash(docker restart *)",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php -l /var/www/html/app/Console/Commands/AggregateReadings.php)",
+      "Bash(tasklist)",
+      "Bash(powershell.exe -Command 'Get-Process | Where-Object {$_.Name -like '\\\\''*docker*'\\\\''}')",
+      "Bash(docker start *)",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan list readings)",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan readings:aggregate)",
+      "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan tinker --execute=\"dd\\(App\\\\Models\\\\ReadingAggregate::count\\(\\), App\\\\Models\\\\ReadingAggregate::where\\('interval','1h'\\)->count\\(\\), App\\\\Models\\\\ReadingAggregate::where\\('interval','1d'\\)->count\\(\\), App\\\\Models\\\\ReadingAggregate::where\\('interval','1h'\\)->orderByDesc\\('bucket_time'\\)->first\\(\\)?->toArray\\(\\)\\);\")",
+      "Bash(curl -s \"http://localhost:8000/api/v1/readings?device_id=1&sensor_type=temp_air&from=2026-09-18T00:00:00Z&to=2026-09-19T00:00:00Z&interval=1h&agg=avg\")",
+      "Bash(curl -s \"http://localhost:8000/api/v1/readings?device_id=1&sensor_type=humidity&from=2026-09-18T04:00:00.000Z&to=2026-09-19T04:00:00.000Z&interval=1h&agg=avg\")"
+    ]
+  }
+}
