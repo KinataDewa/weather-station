@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  LineChart,
-  Line,
+  ComposedChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -51,14 +51,15 @@ const SENSOR_META: {
   label: string;
   unit: string;
   color: string;
+  icon: string;
 }[] = [
-  { key: "temp_air", label: "Suhu Udara", unit: "°C", color: "text-orange-400" },
-  { key: "humidity", label: "Kelembapan", unit: "%", color: "text-blue-400" },
-  { key: "pressure", label: "Tekanan", unit: "hPa", color: "text-purple-400" },
-  { key: "wind_speed", label: "Kec. Angin", unit: "m/s", color: "text-cyan-400" },
-  { key: "wind_dir", label: "Arah Angin", unit: "°", color: "text-teal-400" },
-  { key: "solar_rad", label: "Radiasi Matahari", unit: "W/m²", color: "text-yellow-400" },
-  { key: "rain_counter", label: "Curah Hujan", unit: "mm", color: "text-indigo-400" },
+  { key: "temp_air", label: "Suhu Udara", unit: "°C", color: "text-orange-400", icon: "🌡️" },
+  { key: "humidity", label: "Kelembapan", unit: "%", color: "text-sky-400", icon: "💧" },
+  { key: "pressure", label: "Tekanan", unit: "hPa", color: "text-purple-400", icon: "🌀" },
+  { key: "wind_speed", label: "Kec. Angin", unit: "m/s", color: "text-cyan-400", icon: "💨" },
+  { key: "wind_dir", label: "Arah Angin", unit: "°", color: "text-teal-400", icon: "🧭" },
+  { key: "solar_rad", label: "Radiasi Matahari", unit: "W/m²", color: "text-yellow-400", icon: "☀️" },
+  { key: "rain_counter", label: "Curah Hujan", unit: "mm", color: "text-indigo-400", icon: "🌧️" },
 ];
 
 function formatValue(v: number | null) {
@@ -104,8 +105,6 @@ export default function DeviceDetail() {
       const res = await fetch(url);
       if (!res.ok) throw new Error("Gagal mengambil data chart");
       const json = await res.json();
-      // TODO: debug sementara — hapus setelah chart kosong terselesaikan
-      console.log(`[fetchSeries] ${sensorType} raw response:`, json);
       const rows = (json.data ?? json) as Record<string, unknown>[];
       return rows.map((row) => {
         const bucket = (row.ts ?? row.bucket ?? row.timestamp ?? row.time ?? row.recorded_at) as string;
@@ -168,14 +167,9 @@ export default function DeviceDetail() {
         map.set(point.bucket, { bucket: point.bucket, temp: null, humidity: point.value });
       }
     }
-    const merged = Array.from(map.values()).sort(
+    return Array.from(map.values()).sort(
       (a, b) => new Date(a.bucket).getTime() - new Date(b.bucket).getTime(),
     );
-    // TODO: debug sementara — hapus setelah chart kosong terselesaikan
-    console.log("[chartData] tempSeries:", tempSeries);
-    console.log("[chartData] humiditySeries:", humiditySeries);
-    console.log("[chartData] merged:", merged);
-    return merged;
   }, [tempSeries, humiditySeries]);
 
   const formatXAxis = (value: string) => {
@@ -188,63 +182,77 @@ export default function DeviceDetail() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-900 text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
+    <main className="min-h-screen">
+      {/* Header */}
+      <header className="sticky top-0 z-10 backdrop-blur-xl bg-slate-950/60 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
             <button
               onClick={() => router.push("/")}
-              className="mb-2 text-sm text-gray-400 hover:text-white transition flex items-center gap-1"
+              className="mb-2 text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1"
             >
               ← Kembali ke halaman utama
             </button>
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate bg-linear-to-r from-white to-slate-300 bg-clip-text text-transparent">
               {latest?.device?.name ?? `Stasiun ${deviceId}`}
             </h1>
             {latest?.device?.location && (
-              <p className="text-gray-400 text-sm mt-1">📍 {latest.device.location}</p>
+              <p className="text-slate-400 text-sm mt-1">📍 {latest.device.location}</p>
             )}
           </div>
           {latest?.device && (
             <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
                 latest.device.is_online
-                  ? "bg-green-900 text-green-300"
-                  : "bg-red-900 text-red-300"
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                  : "bg-red-500/10 text-red-400 border-red-500/20"
               }`}
             >
-              {latest.device.is_online ? "● Online" : "● Offline"}
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  latest.device.is_online
+                    ? "bg-emerald-400 animate-soft-pulse"
+                    : "bg-red-400"
+                }`}
+              />
+              {latest.device.is_online ? "Online" : "Offline"}
             </span>
           )}
         </div>
+      </header>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Latest sensor panel */}
         <section className="mb-10">
-          <h2 className="text-xl font-semibold mb-4">Nilai Terkini</h2>
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+            <span>📊</span> Nilai Terkini
+          </h2>
           {loadingLatest ? (
-            <div className="flex items-center justify-center py-12 text-gray-400">
+            <div className="flex items-center justify-center py-12 text-slate-400 gap-3">
+              <div className="h-6 w-6 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
               Memuat data terkini...
             </div>
           ) : errorLatest ? (
             <div className="flex items-center justify-center py-12 text-red-400">
-              {errorLatest}
+              ⚠️ {errorLatest}
             </div>
           ) : !latest ? (
-            <div className="flex items-center justify-center py-12 text-gray-400">
+            <div className="flex items-center justify-center py-12 text-slate-400">
               Tidak ada data tersedia
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {SENSOR_META.map((sensor) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {SENSOR_META.map((sensor, idx) => (
                 <div
                   key={sensor.key}
-                  className="bg-gray-800 rounded-xl p-4 border border-gray-700 text-center"
+                  className="glass animate-fade-in-up rounded-2xl p-4 text-center hover:bg-white/[0.07] hover:-translate-y-0.5 transition-all duration-300"
+                  style={{ animationDelay: `${idx * 50}ms` }}
                 >
-                  <p className="text-gray-400 text-xs mb-1">{sensor.label}</p>
-                  <p className={`text-2xl font-bold ${sensor.color}`}>
+                  <p className="text-2xl mb-1.5">{sensor.icon}</p>
+                  <p className="text-slate-400 text-xs mb-1">{sensor.label}</p>
+                  <p className={`text-xl sm:text-2xl font-bold ${sensor.color}`}>
                     {formatValue(latest[sensor.key])}
-                    <span className="text-sm font-normal text-gray-400 ml-1">
+                    <span className="text-sm font-normal text-slate-400 ml-1">
                       {latest[sensor.key] !== null ? sensor.unit : ""}
                     </span>
                   </p>
@@ -253,7 +261,7 @@ export default function DeviceDetail() {
             </div>
           )}
           {latest?.recorded_at && (
-            <p className="text-gray-500 text-xs mt-3">
+            <p className="text-slate-500 text-xs mt-4">
               Update terakhir:{" "}
               {new Date(latest.recorded_at).toLocaleString("id-ID", {
                 timeZone: "Asia/Jakarta",
@@ -264,17 +272,19 @@ export default function DeviceDetail() {
 
         {/* Chart section */}
         <section>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Grafik Suhu &amp; Kelembapan</h2>
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+              <span>📈</span> Grafik Suhu &amp; Kelembapan
+            </h2>
+            <div className="inline-flex rounded-xl bg-black/20 border border-white/10 p-1 gap-1 self-start sm:self-auto">
               {(Object.keys(RANGE_CONFIG) as RangeOption[]).map((key) => (
                 <button
                   key={key}
                   onClick={() => setRange(key)}
-                  className={`px-3 py-1 rounded text-sm transition ${
+                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                     range === key
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                      ? "bg-blue-600 text-white shadow shadow-blue-600/30"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {RANGE_CONFIG[key].label}
@@ -283,45 +293,67 @@ export default function DeviceDetail() {
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+          <div className="glass rounded-2xl p-3 sm:p-5">
             {loadingChart ? (
-              <div className="flex items-center justify-center h-80 text-gray-400">
+              <div className="flex items-center justify-center h-80 sm:h-105 text-slate-400 gap-3">
+                <div className="h-6 w-6 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
                 Memuat grafik...
               </div>
             ) : errorChart ? (
-              <div className="flex items-center justify-center h-80 text-red-400">
-                {errorChart}
+              <div className="flex items-center justify-center h-80 sm:h-105 text-red-400">
+                ⚠️ {errorChart}
               </div>
             ) : chartData.length === 0 ? (
-              <div className="flex items-center justify-center h-80 text-gray-400">
+              <div className="flex items-center justify-center h-80 sm:h-105 text-slate-400">
                 Tidak ada data untuk rentang ini
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={360}>
-                <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <ResponsiveContainer width="100%" height={420}>
+                <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#fb923c" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#fb923c" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis
                     dataKey="bucket"
                     tickFormatter={formatXAxis}
-                    stroke="#9ca3af"
+                    stroke="#64748b"
                     fontSize={12}
+                    tickLine={false}
                   />
                   <YAxis
                     yAxisId="temp"
                     orientation="left"
                     stroke="#fb923c"
                     fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
                     label={{ value: "°C", angle: -90, position: "insideLeft", fill: "#fb923c" }}
                   />
                   <YAxis
                     yAxisId="humidity"
                     orientation="right"
-                    stroke="#60a5fa"
+                    stroke="#38bdf8"
                     fontSize={12}
-                    label={{ value: "%", angle: 90, position: "insideRight", fill: "#60a5fa" }}
+                    tickLine={false}
+                    axisLine={false}
+                    label={{ value: "%", angle: 90, position: "insideRight", fill: "#38bdf8" }}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: 8 }}
+                    contentStyle={{
+                      backgroundColor: "rgba(15, 23, 42, 0.9)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 12,
+                      backdropFilter: "blur(8px)",
+                    }}
+                    labelStyle={{ color: "#e2e8f0" }}
                     labelFormatter={(value) =>
                       typeof value === "string"
                         ? new Date(value).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
@@ -329,27 +361,31 @@ export default function DeviceDetail() {
                     }
                   />
                   <Legend />
-                  <Line
+                  <Area
                     yAxisId="temp"
                     type="monotone"
                     dataKey="temp"
                     name="Suhu (°C)"
                     stroke="#fb923c"
+                    strokeWidth={2.5}
+                    fill="url(#tempGradient)"
                     dot={false}
                     connectNulls
-                    strokeWidth={2}
+                    activeDot={{ r: 5 }}
                   />
-                  <Line
+                  <Area
                     yAxisId="humidity"
                     type="monotone"
                     dataKey="humidity"
                     name="Kelembapan (%)"
-                    stroke="#60a5fa"
+                    stroke="#38bdf8"
+                    strokeWidth={2.5}
+                    fill="url(#humidityGradient)"
                     dot={false}
                     connectNulls
-                    strokeWidth={2}
+                    activeDot={{ r: 5 }}
                   />
-                </LineChart>
+                </ComposedChart>
               </ResponsiveContainer>
             )}
           </div>

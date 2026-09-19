@@ -1,0 +1,18 @@
+flowchart TD
+    A[Sensor<br/>Membaca besaran fisik: suhu, kelembapan, tekanan, curah hujan, angin]
+    B[Firmware Device — Buffering<br/>Menyimpan reading sementara di memori/lokal saat offline, siap dikirim]
+    C[Transport — HTTP<br/>Kirim payload JSON ke endpoint ingestion backend, single atau batch]
+    D[Autentikasi Device<br/>Cocokkan device_id + X-Api-Key via Hash::check ke api_key_hash, tolak jika device tidak aktif]
+    E[Validasi Payload<br/>Cek struktur JSON, tipe data, dan timestamp tidak terlalu jauh ke masa depan]
+    F[Normalisasi & Dedup<br/>Cocokkan kode sensor ke instalasi aktif device pada waktu ts, tolak duplikat via unique device_id+sensor_id+device_time]
+    G[Enrichment<br/>Terapkan kalibrasi offset/scale yang berlaku, tentukan quality_flag & quality_note dari rentang nilai]
+    H[Simpan Raw Reading<br/>Insert ke sensor_readings sebagai fakta historis append-only]
+    I[Agregasi Jam/Hari<br/>Job readings:aggregate hitung avg/min/max/sum per bucket, upsert ke reading_aggregates]
+    J[API Query<br/>Endpoint dashboard membaca raw atau aggregate sesuai rentang waktu yang diminta]
+    K[Frontend Chart<br/>Dashboard Next.js render grafik & ringkasan, polling berkala]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K
+
+    D -. gagal: 401 Unauthorized .-> D1[Tolak Request]
+    E -. gagal: timestamp_future / invalid schema .-> E1[Tolak / Skip Reading]
+    F -. gagal: duplikat atau instalasi tidak ditemukan .-> F1[Skip / Status Duplicate]
