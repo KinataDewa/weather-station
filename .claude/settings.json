@@ -25,7 +25,13 @@
       "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan readings:aggregate)",
       "Bash(MSYS_NO_PATHCONV=1 docker exec weather_backend php artisan tinker --execute=\"dd\\(App\\\\Models\\\\ReadingAggregate::count\\(\\), App\\\\Models\\\\ReadingAggregate::where\\('interval','1h'\\)->count\\(\\), App\\\\Models\\\\ReadingAggregate::where\\('interval','1d'\\)->count\\(\\), App\\\\Models\\\\ReadingAggregate::where\\('interval','1h'\\)->orderByDesc\\('bucket_time'\\)->first\\(\\)?->toArray\\(\\)\\);\")",
       "Bash(curl -s \"http://localhost:8000/api/v1/readings?device_id=1&sensor_type=temp_air&from=2026-09-18T00:00:00Z&to=2026-09-19T00:00:00Z&interval=1h&agg=avg\")",
-      "Bash(curl -s \"http://localhost:8000/api/v1/readings?device_id=1&sensor_type=humidity&from=2026-09-18T04:00:00.000Z&to=2026-09-19T04:00:00.000Z&interval=1h&agg=avg\")"
+      "Bash(curl -s \"http://localhost:8000/api/v1/readings?device_id=1&sensor_type=humidity&from=2026-09-18T04:00:00.000Z&to=2026-09-19T04:00:00.000Z&interval=1h&agg=avg\")",
+      "Bash(python -c \"import requests; print\\('requests', requests.__version__\\)\")",
+      "Bash(python -m py_compile \"/c/Users/ASUS N 7400 P/weather-station/simulator.py\")",
+      "Bash(pip install *)",
+      "Bash(timeout 15 python simulator.py)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(timeout 15 python -u simulator.py)"
     ]
   }
 }
